@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Student Management System{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div class="project-eyebrow">
+    <span class="bot bot-slate" aria-hidden="true">{% include "partials/robot.svg" %}</span>
+    Student Management System &middot; by Harshita Sharma
+  </div>
+  <h1>Student Management System</h1>
+  <p>Add students, update GPA, mark attendance, and pull an attendance report - backed by a SQLite database.</p>
+</header>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+{% if success %}<div class="success">{{ success }}</div>{% endif %}
+
+<div class="grid-2">
+  <div>
+    <h3 class="sans" style="font-size:0.95rem;">Add a student</h3>
+    <form method="POST" action="{{ url_for('student_mgmt.add') }}">
+      <div class="field-row"><label for="name">Name</label><input type="text" id="name" name="name" required></div>
+      <div class="field-row"><label for="roll_number">Roll number</label><input type="text" id="roll_number" name="roll_number" required></div>
+      <div class="field-row"><label for="branch">Branch</label><input type="text" id="branch" name="branch" required></div>
+      <div class="grid-2">
+        <div class="field-row"><label for="semester">Semester (1-8)</label><input type="number" id="semester" name="semester" min="1" max="8" required></div>
+        <div class="field-row"><label for="gpa">GPA (0-10)</label><input type="number" id="gpa" name="gpa" min="0" max="10" step="0.01" required></div>
+      </div>
+      <button type="submit">Add student</button>
+    </form>
+  </div>
+
+  <div>
+    <h3 class="sans" style="font-size:0.95rem;">Mark attendance</h3>
+    <form method="POST" action="{{ url_for('student_mgmt.attendance') }}">
+      <div class="field-row"><label for="att_roll">Roll number</label><input type="text" id="att_roll" name="roll_number" required></div>
+      <div class="grid-2">
+        <div class="field-row"><label for="att_date">Date</label><input type="date" id="att_date" name="date" required></div>
+        <div class="field-row">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit">Mark attendance</button>
+    </form>
+
+    <h3 class="sans" style="font-size:0.95rem; margin-top:22px;">Update GPA</h3>
+    <form method="POST" action="{{ url_for('student_mgmt.update_gpa') }}">
+      <div class="grid-2">
+        <div class="field-row"><label for="upd_roll">Roll number</label><input type="text" id="upd_roll" name="roll_number" required></div>
+        <div class="field-row"><label for="new_gpa">New GPA</label><input type="number" id="new_gpa" name="gpa" min="0" max="10" step="0.01" required></div>
+      </div>
+      <button type="submit" class="secondary">Update GPA</button>
+    </form>
+  </div>
+</div>
+
+<div class="result">
+  <h3 class="sans" style="font-size:0.95rem;">All students</h3>
+  <table class="data">
+    <thead><tr><th>ID</th><th>Name</th><th>Roll No</th><th>Branch</th><th>Semester</th><th>GPA</th><th></th></tr></thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td>{{ s[0] }}</td><td>{{ s[1] }}</td><td>{{ s[2] }}</td><td>{{ s[3] }}</td><td>{{ s[4] }}</td><td>{{ s[5] }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('student_mgmt.delete') }}" style="display:inline;" onsubmit="return confirm('Delete {{ s[1] }}?');">
+            <input type="hidden" name="roll_number" value="{{ s[2] }}">
+            <button type="submit" class="danger sans" style="padding:4px 10px; font-size:0.8rem;">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not students %}<tr><td colspan="7" class="sans" style="color:var(--muted);">No students yet - add one above.</td></tr>{% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="result">
+  <h3 class="sans" style="font-size:0.95rem;">Attendance report</h3>
+  <form method="GET" action="{{ url_for('student_mgmt.attendance_report') }}">
+    <div class="field-row" style="max-width:260px;">
+      <label for="report_roll">Roll number</label>
+      <input type="text" id="report_roll" name="roll_number" value="{{ report_roll or '' }}">
+    </div>
+    <button type="submit" class="secondary">View report</button>
+  </form>
+
+  {% if report_name %}
+  <div style="margin-top:16px;" class="sans">
+    <strong>{{ report_name }}</strong>
+    {% if attendance_pct is not none %} - {{ attendance_pct }}% present{% endif %}
+    <table class="data">
+      <thead><tr><th>Date</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for date, status in report_rows %}
+        <tr><td>{{ date }}</td><td>{{ status }}</td></tr>
+        {% endfor %}
+        {% if not report_rows %}<tr><td colspan="2" style="color:var(--muted);">No attendance records yet.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
